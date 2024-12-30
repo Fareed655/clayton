@@ -308,7 +308,7 @@ class Clayton {
     }
   }
 
-  async play2048() {
+ async play2048() {
     const startGameResult = await this.makeRequest(`${this.baseURL}/game/start`, "post");
     if (!startGameResult.success || startGameResult.data.message !== "Game started successfully") {
       this.log("Unable to start 2048 game", "error");
@@ -343,48 +343,45 @@ class Clayton {
     await sleep(5);
   }
 
-  async playStack() {
-  const startGameResult = await this.makeRequest(`${this.baseURL}/stack/st-game`, "post");
-  if (!startGameResult.success) {
-    this.log("Unable to start game Stack", "error");
-    return;
-  }
-
-  this.log("The Stack Game has begun successfully", "success");
-
-  const session_id = startGameResult.data.session_id;
-  const targetScore = 100000; // Desired high score
-  let currentScore = 0;
-  const gameEndTime = Date.now() + 120000; // 2-minute limit
-
-  while (Date.now() < gameEndTime && currentScore < targetScore) {
-    const increment = Math.floor(Math.random() * 200 + 800); // Randomize score increments between 800 and 1000
-    currentScore += increment;
-
-    const updateResult = await this.makeRequest(`${this.baseURL}/stack/update-game`, "post", { score: currentScore, session_id });
-    if (updateResult.success) {
-      this.log(`Updated Stack score to: ${currentScore}`, "success");
-    } else {
-      this.log(`Error updating Stack score: ${updateResult.error || "Unknown error"}`, "error");
-      break;
+async playStack() {
+    const startGameResult = await this.makeRequest(`${this.baseURL}/stack/st-game`, "post");
+    if (!startGameResult.success) {
+      this.log("Unable to start game Stack", "error");
+      return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, Math.random() * 3000 + 1000)); // Delay between updates (1-4 seconds)
-  }
+    this.log("The Stack Game has begun successfully", "success");
 
-  const finalScore = currentScore;
+    const gameEndTime = Date.now() + 120000;
+    const scores = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+    let currentScoreIndex = 0;
 
-  const endGameResult = await this.makeRequest(`${this.baseURL}/stack/en-game`, "post", { score: finalScore, multiplier: this.multiplier });
-  if (endGameResult.success) {
-    const reward = endGameResult.data;
-    this.log(`The Stack game has ended successfully. Achieved ${finalScore} points. Rewards: ${reward.earn} CL and ${reward.xp_earned} XP`, "success");
-  } else {
-    this.log(`Stack game end error: ${endGameResult.error || "Unknown error"}`, "error");
-  }
+    while (Date.now() < gameEndTime && currentScoreIndex < scores.length) {
+      const score = scores[currentScoreIndex];
+      // await sleep(5);
+      const updateResult = await this.makeRequest(`${this.baseURL}/stack/update-game`, "post", { score });
+      if (updateResult.success) {
+        this.log(`Update Stack score: ${score}`, "success");
+        currentScoreIndex++;
+      } else {
+        this.log(`Error updating Stack point: ${updateResult.error || "Unknown error"}`, "error");
+      }
 
-  await new Promise((resolve) => setTimeout(resolve, 5000)); // Short pause before continuing
-}
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 10000 + 5000));
+    }
 
+    const numberBonus = getRandomNumber(1, 9);
+    const finalScore = (scores[currentScoreIndex - 1] || 90) + numberBonus;
+
+    const endGameResult = await this.makeRequest(`${this.baseURL}/stack/en-game`, "post", { score: finalScore, multiplier: this.multiplier });
+    if (endGameResult.success) {
+      const reward = endGameResult.data;
+      this.log(`The Stack game has ended successfully. Get ${reward.earn} CL and ${reward.xp_earned} XP`, "success");
+    } else {
+      this.log(`Stack game end error: ${endGameResult.error || "Unknown error"}`, "error");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
 async playGames(tickets) {
@@ -394,20 +391,18 @@ async playGames(tickets) {
       if (settings.AUTO_PLAY_GAME_1204 && !settings.AUTO_PLAY_GAME_STACK) {
         await this.play2048();
       } else if (!settings.AUTO_PLAY_GAME_1204 && settings.AUTO_PLAY_GAME_STACK) {
-        await this.playStack(); // Calls playStack
+        await this.playStack();
       } else {
         if (currTicket % 2 === 0) {
           await this.play2048();
         } else {
-          await this.playStack(); // Calls playStack
+          await this.playStack();
         }
       }
       await sleep(5);
       currTicket--;
     }
   }
-}
-
 
   async connectwallet(wallet) {
     if (!wallet) return this.log("Wallet address not found...ignore");
