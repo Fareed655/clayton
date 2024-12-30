@@ -390,21 +390,22 @@ class Clayton {
 async playGames(tickets) {
     let currTicket = parseInt(tickets);
     while (currTicket > 0) {
-        this.log(`Số vé hiện tại: ${currTicket}`, "info");
-        if (settings.AUTO_PLAY_GAME_1204 && !settings.AUTO_PLAY_GAME_STACK) {
-            await this.play2048();
-        } else if (!settings.AUTO_PLAY_GAME_1204 && settings.AUTO_PLAY_GAME_STACK) {
-            await this.playStack(); // Calls playStack
+      this.log(`Số vé hiện tại: ${currTicket}`, "info");
+      if (settings.AUTO_PLAY_GAME_1204 && !settings.AUTO_PLAY_GAME_STACK) {
+        await this.play2048();
+      } else if (!settings.AUTO_PLAY_GAME_1204 && settings.AUTO_PLAY_GAME_STACK) {
+        await this.playStack(); // Calls playStack
+      } else {
+        if (currTicket % 2 === 0) {
+          await this.play2048();
         } else {
-            if (currTicket % 2 === 0) {
-                await this.play2048();
-            } else {
-                await this.playStack(); // Calls playStack
-            }
+          await this.playStack(); // Calls playStack
         }
-        await sleep(5);
-        currTicket--;
+      }
+      await sleep(5);
+      currTicket--;
     }
+  }
 }
 
 
